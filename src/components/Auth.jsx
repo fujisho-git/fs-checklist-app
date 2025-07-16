@@ -2,31 +2,23 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup } = useAuth();
+  const { login } = useAuth();
 
   async function handleSubmit(e) {
     e.preventDefault();
     
-    if (password.length < 6) {
-      return setError('パスワードは6文字以上である必要があります');
-    }
-
     try {
       setError('');
       setLoading(true);
-      if (isLogin) {
-        await login(email, password);
-      } else {
-        await signup(email, password);
-      }
+      await login(email, password, rememberMe);
     } catch (error) {
-      setError(isLogin ? 'ログインに失敗しました' : 'アカウント作成に失敗しました');
+      setError('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
       console.error(error);
     }
     setLoading(false);
@@ -35,7 +27,7 @@ export default function Auth() {
   return (
     <div className="auth-container">
       <div className="auth-form">
-        <h2>{isLogin ? 'ログイン' : 'アカウント作成'}</h2>
+        <h2>作業前点検システム ログイン</h2>
         {error && <div className="error">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -46,6 +38,7 @@ export default function Auth() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder="example@company.com"
             />
           </div>
           <div className="form-group">
@@ -56,23 +49,33 @@ export default function Auth() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              placeholder="パスワードを入力"
             />
-            <p className="password-hint">パスワードは6文字以上で入力してください。</p>
+          </div>
+          <div className="form-group remember-group">
+            <label className="remember-label">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="remember-checkbox"
+              />
+              <span className="remember-text">
+                ログイン状態を保存する
+              </span>
+            </label>
+            <p className="remember-hint">
+              チェックを外してブラウザを閉じるとログアウトします
+            </p>
           </div>
           <button type="submit" disabled={loading} className="auth-button">
-            {loading ? '処理中...' : (isLogin ? 'ログイン' : 'アカウント作成')}
+            {loading ? 'ログイン中...' : 'ログイン'}
           </button>
         </form>
-        <p className="auth-switch">
-          {isLogin ? 'アカウントをお持ちでない方は' : '既にアカウントをお持ちの方は'}
-          <button 
-            type="button" 
-            onClick={() => setIsLogin(!isLogin)}
-            className="link-button"
-          >
-            {isLogin ? 'アカウント作成' : 'ログイン'}
-          </button>
-        </p>
+        <div className="auth-note">
+          <p>※ アカウントは管理者より提供されます</p>
+          <p>ログインできない場合は管理者にお問い合わせください</p>
+        </div>
       </div>
     </div>
   );

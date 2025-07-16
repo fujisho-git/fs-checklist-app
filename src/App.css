@@ -42,6 +42,8 @@ body {
   text-align: center;
   margin-bottom: 1.5rem;
   color: #2c3e50;
+  font-size: 1.4rem;
+  line-height: 1.3;
 }
 
 .form-group {
@@ -108,6 +110,71 @@ body {
   font-size: 0.8rem;
   color: #777;
   margin-top: 4px;
+}
+
+.remember-group {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.remember-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.remember-checkbox {
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+.remember-text {
+  color: #2c3e50;
+  font-weight: 500;
+  line-height: 1.4;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.form-group .remember-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.remember-hint {
+  font-size: 0.7rem;
+  color: #7f8c8d;
+  margin-top: 4px;
+  margin-left: 0;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-align: center;
+  display: block;
+  width: 100%;
+}
+
+.auth-note {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
+.auth-note p {
+  margin: 0.3rem 0;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.auth-note p:first-child {
+  font-weight: 500;
+  color: #2c3e50;
 }
 
 .error {
@@ -715,6 +782,34 @@ body {
     line-height: 1.4;
   }
   
+  /* 認証画面のモバイル調整 */
+  .auth-form {
+    padding: 1.5rem;
+    max-width: 350px;
+  }
+  
+  .auth-form h2 {
+    font-size: 1.3rem;
+    line-height: 1.3;
+    margin-bottom: 1.2rem;
+  }
+  
+  .remember-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  .remember-hint {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-left: 20px;
+  }
+  
+  .auth-note p {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  
   /* コンテナとレイアウト */
   .checklist-container,
   .history-container,
@@ -831,7 +926,8 @@ body {
     gap: 10px;
   }
   
-  .checkbox-label {
+  .check-item .checkbox-label,
+  .simple-item .checkbox-label {
     margin-bottom: 5px;
   }
   

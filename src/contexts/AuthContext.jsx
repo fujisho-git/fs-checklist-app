@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { 
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
 } from 'firebase/auth';
 import { auth } from '../firebase';
 
@@ -17,13 +19,10 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // サインアップ
-  function signup(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
-  }
-
   // ログイン
-  function login(email, password) {
+  async function login(email, password, rememberMe = true) {
+    // 永続化設定を適用
+    await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
     return signInWithEmailAndPassword(auth, email, password);
   }
 
@@ -44,7 +43,6 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     login,
-    signup,
     logout
   };
 
