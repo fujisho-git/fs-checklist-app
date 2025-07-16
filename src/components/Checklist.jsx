@@ -4,7 +4,7 @@ import { createNewChecklist } from '../data/checklistData';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function Checklist() {
+export default function Checklist({ onViewHistory }) {
   const [checklist, setChecklist] = useState(null);
   const [inspector, setInspector] = useState('');
   const [weather, setWeather] = useState('');
@@ -81,9 +81,14 @@ export default function Checklist() {
       <header className="checklist-header">
         <div className="header-top">
           <h1>{checklist.title}</h1>
-          <button onClick={logout} className="logout-button">
-            ログアウト
-          </button>
+          <div className="header-buttons">
+            <button onClick={onViewHistory} className="history-button">
+              履歴を見る
+            </button>
+            <button onClick={logout} className="logout-button">
+              ログアウト
+            </button>
+          </div>
         </div>
         
         <div className="header-info">
