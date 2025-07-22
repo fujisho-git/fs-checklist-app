@@ -54,7 +54,7 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
   };
 
   const saveChecklist = async () => {
-    if (!checklist || !user) return;
+    if (!checklist) return;
     
     setSaving(true);
     try {
@@ -62,7 +62,9 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
         ...checklist,
         inspector,
         weather,
-        completedAt: new Date().toISOString()
+        completedAt: new Date().toISOString(),
+        // ログインしていない場合は匿名ユーザーとして保存
+        createdBy: user?.email || 'anonymous'
       };
       
       await setDoc(doc(db, 'checklists', checklist.id), updatedChecklist);
@@ -70,7 +72,11 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
       alert('チェックリストを保存しました');
     } catch (error) {
       console.error('保存エラー:', error);
-      alert('保存に失敗しました');
+      if (error.code === 'permission-denied') {
+        alert('保存に失敗しました：アクセス権限がありません。Firebase のセキュリティルールを確認してください。');
+      } else {
+        alert('保存に失敗しました');
+      }
     }
     setSaving(false);
   };
