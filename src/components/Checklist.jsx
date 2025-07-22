@@ -4,12 +4,12 @@ import { createNewChecklist } from '../data/checklistData';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function Checklist({ onViewHistory }) {
+export default function Checklist({ onViewHistory, onViewAdminHistory }) {
   const [checklist, setChecklist] = useState(null);
   const [inspector, setInspector] = useState('');
   const [weather, setWeather] = useState('');
   const [saving, setSaving] = useState(false);
-  const { currentUser, logout } = useAuth();
+  const { currentUser, isAdminUser, logout } = useAuth();
 
   useEffect(() => {
     // 新しいチェックリストを作成
@@ -85,6 +85,11 @@ export default function Checklist({ onViewHistory }) {
             <button onClick={onViewHistory} className="history-button">
               履歴を見る
             </button>
+            {isAdminUser && onViewAdminHistory && (
+              <button onClick={onViewAdminHistory} className="admin-button">
+                管理者画面
+              </button>
+            )}
             <button onClick={logout} className="logout-button">
               ログアウト
             </button>

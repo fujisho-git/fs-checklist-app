@@ -8,6 +8,7 @@ import {
   browserSessionPersistence
 } from 'firebase/auth';
 import { auth } from '../firebase';
+import { isAdmin } from '../utils/adminUtils';
 
 const AuthContext = createContext();
 
@@ -17,6 +18,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // ログイン
@@ -34,6 +36,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      // ユーザーの管理者権限を判定
+      setIsAdminUser(user ? isAdmin(user.email) : false);
       setLoading(false);
     });
 
@@ -42,6 +46,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
+    isAdminUser,
     login,
     logout
   };

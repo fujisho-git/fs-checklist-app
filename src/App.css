@@ -435,6 +435,20 @@ body {
   background-color: #2980b9;
 }
 
+.admin-button {
+  padding: 0.5rem 1rem;
+  background-color: #e67e22;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.admin-button:hover {
+  background-color: #d35400;
+}
+
 .new-checklist-button {
   padding: 0.5rem 1rem;
   background-color: #27ae60;
@@ -461,6 +475,17 @@ body {
 
 .back-button:hover {
   background-color: #7f8c8d;
+}
+
+/* 管理者カード用のスタイル */
+.admin-card {
+  border-left: 4px solid #e67e22;
+}
+
+.admin-card .card-info p:nth-child(3) {
+  font-size: 0.8rem;
+  color: #e67e22;
+  font-weight: bold;
 }
 
 /* 履歴画面のスタイル */

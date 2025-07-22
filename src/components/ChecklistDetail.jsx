@@ -1,6 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 
-export default function ChecklistDetail({ checklist, onBackToHistory }) {
+export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmin = false }) {
   const { logout } = useAuth();
 
   if (!checklist) {
@@ -55,7 +55,7 @@ export default function ChecklistDetail({ checklist, onBackToHistory }) {
           <h1>{checklist.title}</h1>
           <div className="header-buttons">
             <button onClick={onBackToHistory} className="back-button">
-              履歴に戻る
+              {isFromAdmin ? '管理者画面に戻る' : '履歴に戻る'}
             </button>
             <button onClick={logout} className="logout-button">
               ログアウト
@@ -68,6 +68,9 @@ export default function ChecklistDetail({ checklist, onBackToHistory }) {
             <span><strong>点検日:</strong> {formatDate(checklist.date)}</span>
             <span><strong>天候:</strong> {checklist.weather || '-'}</span>
             <span><strong>点検者:</strong> {checklist.inspector || '-'}</span>
+            {isFromAdmin && (
+              <span><strong>作成者:</strong> {checklist.createdBy || '-'}</span>
+            )}
             <div className={`completion-status ${completionRate === 100 ? 'complete' : 'incomplete'}`}>
               <strong>完了率:</strong> {completionRate}% ({completed}/{total})
             </div>
