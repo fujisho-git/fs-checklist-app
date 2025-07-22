@@ -4,19 +4,22 @@ import { createNewChecklist } from '../data/checklistData';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function Checklist({ onViewHistory, onViewAdminHistory }) {
+export default function Checklist({ onViewHistory, onViewAdminHistory, onLoginRequest, currentUser: passedCurrentUser }) {
   const [checklist, setChecklist] = useState(null);
   const [inspector, setInspector] = useState('');
   const [weather, setWeather] = useState('');
   const [saving, setSaving] = useState(false);
   const { currentUser, isAdminUser, logout } = useAuth();
 
+  // 渡されたcurrentUserを優先して使用（ログイン不要の場合に対応）
+  const user = passedCurrentUser || currentUser;
+
   useEffect(() => {
     // 新しいチェックリストを作成
     const newChecklist = createNewChecklist();
-    newChecklist.createdBy = currentUser?.email;
+    newChecklist.createdBy = user?.email || 'anonymous';
     setChecklist(newChecklist);
-  }, [currentUser]);
+  }, [user]);
 
   const handleItemCheck = (sectionIndex, itemIndex, checked, note = '') => {
     setChecklist(prev => {
@@ -51,7 +54,7 @@ export default function Checklist({ onViewHistory, onViewAdminHistory }) {
   };
 
   const saveChecklist = async () => {
-    if (!checklist || !currentUser) return;
+    if (!checklist || !user) return;
     
     setSaving(true);
     try {
@@ -85,14 +88,20 @@ export default function Checklist({ onViewHistory, onViewAdminHistory }) {
             <button onClick={onViewHistory} className="history-button">
               履歴を見る
             </button>
-            {isAdminUser && onViewAdminHistory && (
+            {user && isAdminUser && onViewAdminHistory && (
               <button onClick={onViewAdminHistory} className="admin-button">
                 管理者画面
               </button>
             )}
-            <button onClick={logout} className="logout-button">
-              ログアウト
-            </button>
+            {user ? (
+              <button onClick={logout} className="logout-button">
+                ログアウト
+              </button>
+            ) : (
+              <button onClick={onLoginRequest} className="login-button">
+                ログイン
+              </button>
+            )}
           </div>
         </div>
         

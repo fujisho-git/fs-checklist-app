@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function Auth() {
+export default function Auth({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -17,6 +17,10 @@ export default function Auth() {
       setError('');
       setLoading(true);
       await login(email, password, rememberMe);
+      // ログイン成功時にコールバックを呼び出し
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
     } catch (error) {
       setError('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
       console.error(error);

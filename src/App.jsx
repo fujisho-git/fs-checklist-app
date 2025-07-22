@@ -10,19 +10,39 @@ import './App.css';
 function AppContent() {
   const { currentUser, isAdminUser } = useAuth();
   const [currentView, setCurrentView] = useState('new');
-  const [previousView, setPreviousView] = useState(null); // 追加: 前の画面を追跡
+  const [previousView, setPreviousView] = useState(null);
   const [selectedChecklist, setSelectedChecklist] = useState(null);
 
-  if (!currentUser) {
-    return <Auth />;
+  // ログイン画面を表示するケース（履歴や管理者画面にアクセス時のみ）
+  if (!currentUser && (currentView === 'history' || currentView === 'admin' || currentView === 'detail')) {
+    return <Auth onLoginSuccess={() => {
+      // ログイン成功後は元の画面に戻る
+      if (currentView === 'detail') {
+        // 詳細画面の場合は前の画面に応じて戻る
+        if (previousView === 'admin') {
+          setCurrentView('admin');
+        } else {
+          setCurrentView('history');
+        }
+      }
+      // 他の場合はそのまま
+    }} />;
   }
 
   const handleViewHistory = () => {
+    if (!currentUser) {
+      setCurrentView('history'); // ログイン画面を表示するためにhistoryに設定
+      return;
+    }
     setCurrentView('history');
     setSelectedChecklist(null);
   };
 
   const handleViewAdminHistory = () => {
+    if (!currentUser) {
+      setCurrentView('admin'); // ログイン画面を表示するためにadminに設定
+      return;
+    }
     setCurrentView('admin');
     setSelectedChecklist(null);
   };
@@ -34,8 +54,12 @@ function AppContent() {
   };
 
   const handleSelectChecklist = (checklist) => {
+    if (!currentUser) {
+      setCurrentView('detail'); // ログイン画面を表示するためにdetailに設定
+      return;
+    }
     setSelectedChecklist(checklist);
-    setPreviousView(currentView); // 現在のビューを保存
+    setPreviousView(currentView);
     setCurrentView('detail');
   };
 
@@ -50,6 +74,15 @@ function AppContent() {
     setSelectedChecklist(null);
     setPreviousView(null);
   };
+
+  const handleLoginRequest = () => {
+    setCurrentView('auth');
+  };
+
+  // ログイン画面を明示的に表示する場合
+  if (currentView === 'auth') {
+    return <Auth onLoginSuccess={() => setCurrentView('new')} />;
+  }
 
   switch (currentView) {
     case 'admin':
@@ -80,6 +113,8 @@ function AppContent() {
         <Checklist 
           onViewHistory={handleViewHistory}
           onViewAdminHistory={isAdminUser ? handleViewAdminHistory : null}
+          onLoginRequest={handleLoginRequest}
+          currentUser={currentUser}
         />
       );
   }
