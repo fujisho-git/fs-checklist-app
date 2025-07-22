@@ -4,7 +4,7 @@ import { createNewChecklist } from '../data/checklistData';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function Checklist({ onViewHistory, onViewAdminHistory, onLoginRequest, currentUser: passedCurrentUser }) {
+export default function Checklist({ onViewHistory, onViewAdminHistory, currentUser: passedCurrentUser }) {
   const [checklist, setChecklist] = useState(null);
   const [inspector, setInspector] = useState('');
   const [weather, setWeather] = useState('');
@@ -85,21 +85,23 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, onLoginRe
         <div className="header-top">
           <h1>{checklist.title}</h1>
           <div className="header-buttons">
-            <button onClick={onViewHistory} className="history-button">
-              履歴を見る
-            </button>
-            {user && isAdminUser && onViewAdminHistory && (
-              <button onClick={onViewAdminHistory} className="admin-button">
-                管理者画面
-              </button>
-            )}
             {user ? (
-              <button onClick={logout} className="logout-button">
-                ログアウト
-              </button>
+              <>
+                <button onClick={onViewHistory} className="history-button">
+                  履歴を見る
+                </button>
+                {isAdminUser && onViewAdminHistory && (
+                  <button onClick={onViewAdminHistory} className="admin-button">
+                    管理者画面
+                  </button>
+                )}
+                <button onClick={logout} className="logout-button">
+                  ログアウト
+                </button>
+              </>
             ) : (
-              <button onClick={onLoginRequest} className="login-button">
-                ログイン
+              <button onClick={() => window.open('#auth', '_blank')} className="login-button">
+                ログイン（履歴確認）
               </button>
             )}
           </div>

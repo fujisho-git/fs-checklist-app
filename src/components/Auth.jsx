@@ -42,7 +42,7 @@ export default function Auth({ onLoginSuccess }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="example@company.com"
+              placeholder="メールアドレスを入力"
             />
           </div>
           <div className="form-group">
