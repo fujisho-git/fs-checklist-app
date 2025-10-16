@@ -7,6 +7,7 @@ import Checklist from './components/Checklist';
 import ChecklistHistory from './components/ChecklistHistory';
 import ChecklistDetail from './components/ChecklistDetail';
 import AdminHistory from './components/AdminHistory';
+import AdminManagement from './components/AdminManagement';
 import './App.css';
 
 function AppContent() {
@@ -36,6 +37,13 @@ function AppContent() {
           setSelectedChecklist(null);
         } else {
           setCurrentView('admin'); // ログイン要求画面表示
+        }
+      } else if (hash === 'admin-management') {
+        if (currentUser && isAdminUser) {
+          setCurrentView('admin-management');
+          setSelectedChecklist(null);
+        } else {
+          setCurrentView('admin-management'); // ログイン要求画面表示
         }
       } else if (hash.startsWith('detail-')) {
         // 詳細画面：チェックリストIDからデータを取得
@@ -106,6 +114,10 @@ function AppContent() {
     window.location.hash = 'admin';
   };
 
+  const handleViewAdminManagement = () => {
+    window.location.hash = 'admin-management';
+  };
+
   const handleBackToNew = () => {
     window.location.hash = '';
   };
@@ -148,7 +160,7 @@ function AppContent() {
   }
 
   // ログインが必要な画面にアクセスしようとした場合
-  if (!currentUser && (currentView === 'history' || currentView === 'admin' || currentView === 'detail')) {
+  if (!currentUser && (currentView === 'history' || currentView === 'admin' || currentView === 'admin-management' || currentView === 'detail')) {
     return (
       <div className="auth-required-container">
         <div className="auth-required-message">
@@ -179,6 +191,12 @@ function AppContent() {
           onBackToNew={handleBackToNew}
         />
       );
+    case 'admin-management':
+      return (
+        <AdminManagement 
+          onBackToNew={handleBackToNew}
+        />
+      );
     case 'history':
       return (
         <ChecklistHistory 
@@ -200,6 +218,7 @@ function AppContent() {
         <Checklist 
           onViewHistory={handleViewHistory}
           onViewAdminHistory={isAdminUser ? handleViewAdminHistory : null}
+          onViewAdminManagement={isAdminUser ? handleViewAdminManagement : null}
           currentUser={currentUser}
         />
       );

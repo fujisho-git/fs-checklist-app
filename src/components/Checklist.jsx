@@ -4,7 +4,7 @@ import { createNewChecklist } from '../data/checklistData';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function Checklist({ onViewHistory, onViewAdminHistory, currentUser: passedCurrentUser }) {
+export default function Checklist({ onViewHistory, onViewAdminHistory, onViewAdminManagement, currentUser: passedCurrentUser }) {
   const [checklist, setChecklist] = useState(null);
   const [inspector, setInspector] = useState('');
   const [weather, setWeather] = useState('');
@@ -99,6 +99,11 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
                 {isAdminUser && onViewAdminHistory && (
                   <button onClick={onViewAdminHistory} className="admin-button">
                     管理者画面
+                  </button>
+                )}
+                {isAdminUser && onViewAdminManagement && (
+                  <button onClick={onViewAdminManagement} className="admin-management-button">
+                    管理者管理
                   </button>
                 )}
                 <button onClick={logout} className="logout-button">

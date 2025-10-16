@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // チェックリストのルール
+    match /checklists/{document} {
+      // 認証済みユーザーは読み取り・書き込み可能
+      allow read, write: if request.auth != null;
+      // 匿名ユーザーも書き込み可能（既存の機能を維持）
+      allow write: if true;
+    }
+    
+    // 管理者コレクションのルール
+    match /admins/{document} {
+      // 認証済みユーザーのみ読み取り可能
+      allow read: if request.auth != null;
+      
+      // デフォルト管理者のみ書き込み・削除可能（初期設定用）
+      allow write, delete: if request.auth != null && 
+                           request.auth.token.email == 'pr.fujisho@gmail.com';
+    }
+  }
+}

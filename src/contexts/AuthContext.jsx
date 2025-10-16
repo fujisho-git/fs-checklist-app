@@ -8,7 +8,7 @@ import {
   browserSessionPersistence
 } from 'firebase/auth';
 import { auth } from '../firebase';
-import { isAdmin } from '../utils/adminUtils';
+import { isAdminSync, getAdminEmails } from '../utils/adminUtils';
 
 const AuthContext = createContext();
 
@@ -34,10 +34,24 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      // ユーザーの管理者権限を判定
-      setIsAdminUser(user ? isAdmin(user.email) : false);
+      
+      if (user) {
+        // 管理者リストを事前に取得してキャッシュ
+        try {
+          await getAdminEmails();
+          // キャッシュされた情報で管理者権限を判定
+          setIsAdminUser(isAdminSync(user.email));
+        } catch (error) {
+          console.error('管理者権限の判定エラー:', error);
+          // エラーの場合は同期版で判定
+          setIsAdminUser(isAdminSync(user.email));
+        }
+      } else {
+        setIsAdminUser(false);
+      }
+      
       setLoading(false);
     });
 
