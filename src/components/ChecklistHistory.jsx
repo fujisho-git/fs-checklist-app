@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { collection, query, orderBy, getDocs, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function ChecklistHistory({ onSelectChecklist, onBackToNew }) {
+export default function ChecklistHistory({ onSelectChecklist, onEditChecklist, onBackToNew }) {
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchDate, setSearchDate] = useState('');
@@ -77,31 +77,79 @@ export default function ChecklistHistory({ onSelectChecklist, onBackToNew }) {
     });
   };
 
-  const getCompletionStatus = (checklist) => {
-    if (!checklist.sections) return { completed: 0, total: 0 };
+  // 今日の日付かどうか判定
+  const isToday = (dateString) => {
+    if (!dateString) return false;
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return dateString === todayStr;
+  };
+
+  // 点検ステータスを取得
+  const getInspectionStatus = (checklist) => {
+    const hasStart = !!checklist.startCompletedAt;
+    const hasEnd = !!checklist.endCompletedAt;
     
-    let completed = 0;
-    let total = 0;
+    if (hasStart && hasEnd) {
+      return { status: 'completed', label: '完了', className: 'status-completed' };
+    } else if (hasStart && !hasEnd) {
+      return { status: 'in-progress', label: '終業待ち', className: 'status-in-progress' };
+    } else {
+      return { status: 'pending', label: '未完了', className: 'status-pending' };
+    }
+  };
+
+  const getCompletionStatus = (checklist) => {
+    if (!checklist.sections) return { completedStart: 0, completedEnd: 0, totalStart: 0, totalEnd: 0 };
+    
+    let completedStart = 0;
+    let completedEnd = 0;
+    let totalStart = 0;  // 始業時チェック対象の項目数
+    let totalEnd = 0;    // 終業時チェック対象の項目数
     
     checklist.sections.forEach(section => {
+      if (section.title === "特記事項・申し送り事項") return;
+      
       if (section.items) {
         section.items.forEach(item => {
           if (item.checks) {
             // 設備個別点検の場合
             item.checks.forEach(check => {
-              total++;
-              if (check.checked) completed++;
+              const checkType = check.checkType || 'both';
+              
+              // 始業時チェック対象かどうか
+              if (checkType === 'start' || checkType === 'both') {
+                totalStart++;
+                if (check.checkedStart) completedStart++;
+              }
+              
+              // 終業時チェック対象かどうか
+              if (checkType === 'end' || checkType === 'both') {
+                totalEnd++;
+                if (check.checkedEnd) completedEnd++;
+              }
             });
           } else {
             // 通常項目の場合
-            total++;
-            if (item.checked) completed++;
+            const checkType = item.checkType || 'both';
+            
+            // 始業時チェック対象かどうか
+            if (checkType === 'start' || checkType === 'both') {
+              totalStart++;
+              if (item.checkedStart) completedStart++;
+            }
+            
+            // 終業時チェック対象かどうか
+            if (checkType === 'end' || checkType === 'both') {
+              totalEnd++;
+              if (item.checkedEnd) completedEnd++;
+            }
           }
         });
       }
     });
     
-    return { completed, total };
+    return { completedStart, completedEnd, totalStart, totalEnd };
   };
 
   if (loading) {
@@ -155,19 +203,25 @@ export default function ChecklistHistory({ onSelectChecklist, onBackToNew }) {
         ) : (
           <div className="checklist-grid">
             {filteredChecklists.map((checklist) => {
-              const { completed, total } = getCompletionStatus(checklist);
-              const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+              const { completedStart, completedEnd, totalStart, totalEnd } = getCompletionStatus(checklist);
+              const completionRateStart = totalStart > 0 ? Math.round((completedStart / totalStart) * 100) : 0;
+              const completionRateEnd = totalEnd > 0 ? Math.round((completedEnd / totalEnd) * 100) : 0;
+              const isTodayChecklist = isToday(checklist.date);
+              const inspectionStatus = getInspectionStatus(checklist);
               
               return (
                 <div 
                   key={checklist.id} 
-                  className="checklist-card"
+                  className={`checklist-card ${isTodayChecklist ? 'today-card' : ''} ${inspectionStatus.className}`}
                   onClick={() => onSelectChecklist(checklist)}
                 >
+                  {isTodayChecklist && (
+                    <div className="today-badge">📅 本日の点検</div>
+                  )}
                   <div className="card-header">
                     <h3>{formatDate(checklist.date)}</h3>
-                    <div className={`completion-badge ${completionRate === 100 ? 'complete' : 'incomplete'}`}>
-                      {completionRate}%
+                    <div className="inspection-status-badge" data-status={inspectionStatus.status}>
+                      {inspectionStatus.label}
                     </div>
                   </div>
                   
@@ -175,7 +229,38 @@ export default function ChecklistHistory({ onSelectChecklist, onBackToNew }) {
                     <div className="card-info">
                       <p><strong>点検者:</strong> {checklist.inspector || '-'}</p>
                       <p><strong>天候:</strong> {checklist.weather || '-'}</p>
-                      <p><strong>完了項目:</strong> {completed}/{total}</p>
+                    </div>
+                    
+                    <div className="card-timestamps">
+                      <div className="timestamp-item">
+                        <span className={`timestamp-label ${checklist.startCompletedAt ? 'completed' : ''}`}>
+                          ☀️ 始業時
+                        </span>
+                        <span className="timestamp-value">
+                          {checklist.startCompletedAt 
+                            ? new Date(checklist.startCompletedAt).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})
+                            : '未点検'}
+                        </span>
+                      </div>
+                      <div className="timestamp-item">
+                        <span className={`timestamp-label ${checklist.endCompletedAt ? 'completed' : ''}`}>
+                          🌙 終業時
+                        </span>
+                        <span className="timestamp-value">
+                          {checklist.endCompletedAt 
+                            ? new Date(checklist.endCompletedAt).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})
+                            : '未点検'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="completion-badges">
+                      <div className={`completion-badge ${completionRateStart === 100 ? 'complete' : 'incomplete'}`}>
+                        始業 {completionRateStart}%
+                      </div>
+                      <div className={`completion-badge ${completionRateEnd === 100 ? 'complete' : 'incomplete'}`}>
+                        終業 {completionRateEnd}%
+                      </div>
                     </div>
                     
                     {checklist.specialNotes && (
@@ -189,10 +274,27 @@ export default function ChecklistHistory({ onSelectChecklist, onBackToNew }) {
                   </div>
                   
                   <div className="card-footer">
-                    <small>作成: {checklist.completedAt ? 
-                      new Date(checklist.completedAt).toLocaleString('ja-JP') : 
-                      '未完了'
-                    }</small>
+                    {isTodayChecklist && !checklist.endCompletedAt && checklist.startCompletedAt ? (
+                      <button 
+                        className="edit-button continue-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditChecklist(checklist);
+                        }}
+                      >
+                        🌙 終業時点検を続ける
+                      </button>
+                    ) : (
+                      <button 
+                        className="edit-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditChecklist(checklist);
+                        }}
+                      >
+                        編集
+                      </button>
+                    )}
                   </div>
                 </div>
               );

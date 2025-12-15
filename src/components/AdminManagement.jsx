@@ -212,15 +212,15 @@ export default function AdminManagement({ onBackToNew }) {
                 <tbody>
                   {admins.map((admin) => (
                     <tr key={admin.id}>
-                      <td>{admin.email}</td>
-                      <td>
+                      <td data-label="メールアドレス">{admin.email}</td>
+                      <td data-label="追加日時">
                         {admin.addedAt ? 
                           new Date(admin.addedAt.toDate()).toLocaleString('ja-JP') : 
                           '不明'
                         }
                       </td>
-                      <td>{admin.addedBy || '不明'}</td>
-                      <td>
+                      <td data-label="追加者">{admin.addedBy || '不明'}</td>
+                      <td data-label="">
                         {admin.email === currentUser.email ? (
                           <span className="current-user-badge">現在のユーザー</span>
                         ) : (

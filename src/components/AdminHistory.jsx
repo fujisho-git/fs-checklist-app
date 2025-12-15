@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function AdminHistory({ onSelectChecklist, onBackToNew }) {
+export default function AdminHistory({ onSelectChecklist, onBackToNew, onViewAdminManagement }) {
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchDate, setSearchDate] = useState('');
@@ -81,30 +81,52 @@ export default function AdminHistory({ onSelectChecklist, onBackToNew }) {
   };
 
   const getCompletionStatus = (checklist) => {
-    if (!checklist.sections) return { completed: 0, total: 0 };
+    if (!checklist.sections) return { completedStart: 0, completedEnd: 0, totalStart: 0, totalEnd: 0 };
     
-    let completed = 0;
-    let total = 0;
+    let completedStart = 0;
+    let completedEnd = 0;
+    let totalStart = 0;
+    let totalEnd = 0;
     
     checklist.sections.forEach(section => {
+      if (section.title === "特記事項・申し送り事項") return;
+      
       if (section.items) {
         section.items.forEach(item => {
           if (item.checks) {
             // 設備個別点検の場合
             item.checks.forEach(check => {
-              total++;
-              if (check.checked) completed++;
+              const checkType = check.checkType || 'both';
+              
+              if (checkType === 'start' || checkType === 'both') {
+                totalStart++;
+                if (check.checkedStart) completedStart++;
+              }
+              
+              if (checkType === 'end' || checkType === 'both') {
+                totalEnd++;
+                if (check.checkedEnd) completedEnd++;
+              }
             });
           } else {
             // 通常項目の場合
-            total++;
-            if (item.checked) completed++;
+            const checkType = item.checkType || 'both';
+            
+            if (checkType === 'start' || checkType === 'both') {
+              totalStart++;
+              if (item.checkedStart) completedStart++;
+            }
+            
+            if (checkType === 'end' || checkType === 'both') {
+              totalEnd++;
+              if (item.checkedEnd) completedEnd++;
+            }
           }
         });
       }
     });
     
-    return { completed, total };
+    return { completedStart, completedEnd, totalStart, totalEnd };
   };
 
   if (loading) {
@@ -120,6 +142,11 @@ export default function AdminHistory({ onSelectChecklist, onBackToNew }) {
             <button onClick={onBackToNew} className="new-checklist-button">
               新規点検作成
             </button>
+            {onViewAdminManagement && (
+              <button onClick={onViewAdminManagement} className="admin-management-button">
+                管理者管理
+              </button>
+            )}
             <button onClick={logout} className="logout-button">
               ログアウト
             </button>
@@ -173,8 +200,9 @@ export default function AdminHistory({ onSelectChecklist, onBackToNew }) {
         ) : (
           <div className="checklist-grid">
             {filteredChecklists.map((checklist) => {
-              const { completed, total } = getCompletionStatus(checklist);
-              const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+              const { completedStart, completedEnd, totalStart, totalEnd } = getCompletionStatus(checklist);
+              const completionRateStart = totalStart > 0 ? Math.round((completedStart / totalStart) * 100) : 0;
+              const completionRateEnd = totalEnd > 0 ? Math.round((completedEnd / totalEnd) * 100) : 0;
               
               return (
                 <div 
@@ -184,8 +212,13 @@ export default function AdminHistory({ onSelectChecklist, onBackToNew }) {
                 >
                   <div className="card-header">
                     <h3>{formatDate(checklist.date)}</h3>
-                    <div className={`completion-badge ${completionRate === 100 ? 'complete' : 'incomplete'}`}>
-                      {completionRate}%
+                    <div className="completion-badges">
+                      <div className={`completion-badge ${completionRateStart === 100 ? 'complete' : 'incomplete'}`}>
+                        始業 {completionRateStart}%
+                      </div>
+                      <div className={`completion-badge ${completionRateEnd === 100 ? 'complete' : 'incomplete'}`}>
+                        終業 {completionRateEnd}%
+                      </div>
                     </div>
                   </div>
                   
@@ -194,7 +227,7 @@ export default function AdminHistory({ onSelectChecklist, onBackToNew }) {
                       <p><strong>点検者:</strong> {checklist.inspector || '-'}</p>
                       <p><strong>天候:</strong> {checklist.weather || '-'}</p>
                       <p><strong>作成者:</strong> {checklist.createdBy || '-'}</p>
-                      <p><strong>完了項目:</strong> {completed}/{total}</p>
+                      <p><strong>始業時:</strong> {completedStart}/{total} <strong>終業時:</strong> {completedEnd}/{total}</p>
                     </div>
                     
                     {checklist.specialNotes && (

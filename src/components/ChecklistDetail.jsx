@@ -1,5 +1,28 @@
 import { useAuth } from '../contexts/AuthContext';
 
+// 丸数字を生成するヘルパー関数
+const getCircledNumber = (num) => {
+  const circledNumbers = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', 
+                          '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
+  return num <= 20 ? circledNumbers[num - 1] : `(${num})`;
+};
+
+// テキスト内の特定部分を強調表示するヘルパー関数
+const highlightText = (text) => {
+  const highlightPattern = '富士商産業エネルギー部(0836-81-1115)';
+  if (text.includes(highlightPattern)) {
+    const parts = text.split(highlightPattern);
+    return (
+      <>
+        {parts[0]}
+        <span className="highlight-red">{highlightPattern}</span>
+        {parts[1]}
+      </>
+    );
+  }
+  return text;
+};
+
 export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmin = false }) {
   const { logout } = useAuth();
 
@@ -19,34 +42,66 @@ export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmi
   };
 
   const getCompletionStatus = () => {
-    if (!checklist.sections) return { completed: 0, total: 0 };
+    if (!checklist.sections) return { completedStart: 0, completedEnd: 0, totalStart: 0, totalEnd: 0 };
     
-    let completed = 0;
-    let total = 0;
+    let completedStart = 0;
+    let completedEnd = 0;
+    let totalStart = 0;
+    let totalEnd = 0;
     
     checklist.sections.forEach(section => {
+      if (section.title === "特記事項・申し送り事項") return;
+      
       if (section.items) {
         section.items.forEach(item => {
           if (item.checks) {
             // 設備個別点検の場合
             item.checks.forEach(check => {
-              total++;
-              if (check.checked) completed++;
+              const checkType = check.checkType || 'both';
+              
+              if (checkType === 'start' || checkType === 'both') {
+                totalStart++;
+                if (check.checkedStart) completedStart++;
+              }
+              
+              if (checkType === 'end' || checkType === 'both') {
+                totalEnd++;
+                if (check.checkedEnd) completedEnd++;
+              }
             });
           } else {
             // 通常項目の場合
-            total++;
-            if (item.checked) completed++;
+            const checkType = item.checkType || 'both';
+            
+            if (checkType === 'start' || checkType === 'both') {
+              totalStart++;
+              if (item.checkedStart) completedStart++;
+            }
+            
+            if (checkType === 'end' || checkType === 'both') {
+              totalEnd++;
+              if (item.checkedEnd) completedEnd++;
+            }
           }
         });
       }
     });
     
-    return { completed, total };
+    return { completedStart, completedEnd, totalStart, totalEnd };
   };
 
-  const { completed, total } = getCompletionStatus();
-  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const { completedStart, completedEnd, totalStart, totalEnd } = getCompletionStatus();
+  const completionRateStart = totalStart > 0 ? Math.round((completedStart / totalStart) * 100) : 0;
+  const completionRateEnd = totalEnd > 0 ? Math.round((completedEnd / totalEnd) * 100) : 0;
+
+  // チェック状態を取得するヘルパー関数（旧形式との互換性対応）
+  const getCheckStatus = (item, type) => {
+    if (type === 'start') {
+      return item.checkedStart !== undefined ? item.checkedStart : item.checked;
+    } else {
+      return item.checkedEnd !== undefined ? item.checkedEnd : item.checked;
+    }
+  };
 
   return (
     <div className="detail-container">
@@ -71,8 +126,13 @@ export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmi
             {isFromAdmin && (
               <span><strong>作成者:</strong> {checklist.createdBy || '-'}</span>
             )}
-            <div className={`completion-status ${completionRate === 100 ? 'complete' : 'incomplete'}`}>
-              <strong>完了率:</strong> {completionRate}% ({completed}/{total})
+          </div>
+          <div className="completion-rates">
+            <div className={`completion-status ${completionRateStart === 100 ? 'complete' : 'incomplete'}`}>
+              <strong>始業時完了率:</strong> {completionRateStart}% ({completedStart}/{total})
+            </div>
+            <div className={`completion-status ${completionRateEnd === 100 ? 'complete' : 'incomplete'}`}>
+              <strong>終業時完了率:</strong> {completionRateEnd}% ({completedEnd}/{total})
             </div>
           </div>
           {checklist.completedAt && (
@@ -88,7 +148,7 @@ export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmi
           <section key={sectionIndex} className="detail-section">
             <h2>{section.title}</h2>
             
-            {section.title === "4. 特記事項・申し送り事項" ? (
+            {section.title === "特記事項・申し送り事項" ? (
               <div className="special-notes-display">
                 {checklist.specialNotes ? (
                   <div className="notes-content">
@@ -100,6 +160,14 @@ export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmi
               </div>
             ) : (
               <div className="items-list">
+                {/* ヘッダー行 */}
+                <div className="detail-items-header">
+                  <span className="header-text">点検項目</span>
+                  <span className="header-checkbox">始業時</span>
+                  <span className="header-checkbox">終業時</span>
+                  <span className="header-note">備考</span>
+                </div>
+                
                 {section.items.map((item, itemIndex) => (
                   <div key={itemIndex} className="detail-item">
                     {item.checks ? (
@@ -107,35 +175,51 @@ export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmi
                       <div className="equipment-detail">
                         <h4>{item.name}</h4>
                         {item.checks.map((check, checkIndex) => (
-                          <div key={checkIndex} className="check-detail">
-                            <div className="check-status">
-                              <span className={`status-indicator ${check.checked ? 'checked' : 'unchecked'}`}>
-                                {check.checked ? '✓' : '✗'}
+                          <div key={checkIndex} className="check-detail-row">
+                            <span className="check-text">
+                              <span className="item-number">{getCircledNumber(checkIndex + 1)}</span>
+                              {check.text}
+                            </span>
+                            {(check.checkType === 'start' || check.checkType === 'both' || !check.checkType) ? (
+                              <span className={`status-indicator ${getCheckStatus(check, 'start') ? 'checked' : 'unchecked'}`}>
+                                {getCheckStatus(check, 'start') ? '✓' : '－'}
                               </span>
-                              <span className="check-text">{check.text}</span>
-                            </div>
-                            {check.note && (
-                              <div className="check-note">
-                                <strong>備考:</strong> {check.note}
-                              </div>
+                            ) : (
+                              <span className="status-indicator disabled">－</span>
                             )}
+                            {(check.checkType === 'end' || check.checkType === 'both' || !check.checkType) ? (
+                              <span className={`status-indicator ${getCheckStatus(check, 'end') ? 'checked' : 'unchecked'}`}>
+                                {getCheckStatus(check, 'end') ? '✓' : '－'}
+                              </span>
+                            ) : (
+                              <span className="status-indicator disabled">－</span>
+                            )}
+                            <span className="check-note-text">{check.note || '-'}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
                       // 通常項目の場合
-                      <div className="simple-detail">
-                        <div className="check-status">
-                          <span className={`status-indicator ${item.checked ? 'checked' : 'unchecked'}`}>
-                            {item.checked ? '✓' : '✗'}
+                      <div className="simple-detail-row">
+                        <span className="check-text">
+                          <span className="item-number">{getCircledNumber(itemIndex + 1)}</span>
+                          {highlightText(item.text)}
+                        </span>
+                        {(item.checkType === 'start' || item.checkType === 'both' || !item.checkType) ? (
+                          <span className={`status-indicator ${getCheckStatus(item, 'start') ? 'checked' : 'unchecked'}`}>
+                            {getCheckStatus(item, 'start') ? '✓' : '－'}
                           </span>
-                          <span className="check-text">{item.text}</span>
-                        </div>
-                        {item.note && (
-                          <div className="check-note">
-                            <strong>備考:</strong> {item.note}
-                          </div>
+                        ) : (
+                          <span className="status-indicator disabled">－</span>
                         )}
+                        {(item.checkType === 'end' || item.checkType === 'both' || !item.checkType) ? (
+                          <span className={`status-indicator ${getCheckStatus(item, 'end') ? 'checked' : 'unchecked'}`}>
+                            {getCheckStatus(item, 'end') ? '✓' : '－'}
+                          </span>
+                        ) : (
+                          <span className="status-indicator disabled">－</span>
+                        )}
+                        <span className="check-note-text">{item.note || '-'}</span>
                       </div>
                     )}
                   </div>
@@ -147,4 +231,4 @@ export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmi
       </main>
     </div>
   );
-} 
+}

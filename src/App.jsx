@@ -45,6 +45,32 @@ function AppContent() {
         } else {
           setCurrentView('admin-management'); // ログイン要求画面表示
         }
+      } else if (hash.startsWith('edit-')) {
+        // 編集画面：チェックリストIDからデータを取得
+        const checklistId = hash.replace('edit-', '');
+        if (currentUser && checklistId) {
+          setLoading(true);
+          try {
+            const docRef = doc(db, 'checklists', checklistId);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+              const checklistData = { id: docSnap.id, ...docSnap.data() };
+              setSelectedChecklist(checklistData);
+              setCurrentView('edit');
+              setPreviousView('history');
+            } else {
+              console.error('チェックリストが見つかりません');
+              window.location.hash = 'history';
+            }
+          } catch (error) {
+            console.error('チェックリスト取得エラー:', error);
+            window.location.hash = 'history';
+          }
+          setLoading(false);
+        } else {
+          setCurrentView('edit');
+        }
       } else if (hash.startsWith('detail-')) {
         // 詳細画面：チェックリストIDからデータを取得
         const checklistId = hash.replace('detail-', '');
@@ -130,6 +156,13 @@ function AppContent() {
     window.location.hash = `detail-${checklist.id}`;
   };
 
+  const handleEditChecklist = (checklist) => {
+    setSelectedChecklist(checklist);
+    setPreviousView(currentView);
+    setCurrentView('edit');
+    window.location.hash = `edit-${checklist.id}`;
+  };
+
   const handleBackToHistory = () => {
     window.location.hash = 'history';
   };
@@ -160,7 +193,7 @@ function AppContent() {
   }
 
   // ログインが必要な画面にアクセスしようとした場合
-  if (!currentUser && (currentView === 'history' || currentView === 'admin' || currentView === 'admin-management' || currentView === 'detail')) {
+  if (!currentUser && (currentView === 'history' || currentView === 'admin' || currentView === 'admin-management' || currentView === 'detail' || currentView === 'edit')) {
     return (
       <div className="auth-required-container">
         <div className="auth-required-message">
@@ -189,6 +222,7 @@ function AppContent() {
         <AdminHistory 
           onSelectChecklist={handleSelectChecklist}
           onBackToNew={handleBackToNew}
+          onViewAdminManagement={handleViewAdminManagement}
         />
       );
     case 'admin-management':
@@ -201,6 +235,7 @@ function AppContent() {
       return (
         <ChecklistHistory 
           onSelectChecklist={handleSelectChecklist}
+          onEditChecklist={handleEditChecklist}
           onBackToNew={handleBackToNew}
         />
       );
@@ -212,13 +247,21 @@ function AppContent() {
           isFromAdmin={previousView === 'admin'}
         />
       );
+    case 'edit':
+      return (
+        <Checklist 
+          onViewHistory={handleViewHistory}
+          onViewAdminHistory={isAdminUser ? handleViewAdminHistory : null}
+          currentUser={currentUser}
+          editChecklist={selectedChecklist}
+        />
+      );
     case 'new':
     default:
       return (
         <Checklist 
           onViewHistory={handleViewHistory}
           onViewAdminHistory={isAdminUser ? handleViewAdminHistory : null}
-          onViewAdminManagement={isAdminUser ? handleViewAdminManagement : null}
           currentUser={currentUser}
         />
       );
