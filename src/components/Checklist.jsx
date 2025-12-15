@@ -559,10 +559,11 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
                             </span>
                             <div className="checkbox-group">
                               {(check.checkType === 'start' || check.checkType === 'both') ? (
-                                <label className="checkbox-wrapper" title="始業時">
+                                <label className={`checkbox-wrapper ${isEndOfDayMode ? 'disabled' : ''}`} title="始業時">
                                   <input
                                     type="checkbox"
                                     checked={check.checkedStart}
+                                    disabled={isEndOfDayMode}
                                     onChange={(e) => handleEquipmentCheck(
                                       sectionIndex, 
                                       itemIndex, 
@@ -577,10 +578,11 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
                                 <span className="checkbox-placeholder"></span>
                               )}
                               {(check.checkType === 'end' || check.checkType === 'both') ? (
-                                <label className="checkbox-wrapper" title="終業時">
+                                <label className={`checkbox-wrapper ${!isEndOfDayMode ? 'disabled' : ''}`} title="終業時">
                                   <input
                                     type="checkbox"
                                     checked={check.checkedEnd}
+                                    disabled={!isEndOfDayMode}
                                     onChange={(e) => handleEquipmentCheck(
                                       sectionIndex, 
                                       itemIndex, 
@@ -621,10 +623,11 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
                         </span>
                         <div className="checkbox-group">
                           {(item.checkType === 'start' || item.checkType === 'both') ? (
-                            <label className="checkbox-wrapper" title="始業時">
+                            <label className={`checkbox-wrapper ${isEndOfDayMode ? 'disabled' : ''}`} title="始業時">
                               <input
                                 type="checkbox"
                                 checked={item.checkedStart}
+                                disabled={isEndOfDayMode}
                                 onChange={(e) => handleItemCheck(
                                   sectionIndex, 
                                   itemIndex, 
@@ -638,10 +641,11 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
                             <span className="checkbox-placeholder"></span>
                           )}
                           {(item.checkType === 'end' || item.checkType === 'both') ? (
-                            <label className="checkbox-wrapper" title="終業時">
+                            <label className={`checkbox-wrapper ${!isEndOfDayMode ? 'disabled' : ''}`} title="終業時">
                               <input
                                 type="checkbox"
                                 checked={item.checkedEnd}
+                                disabled={!isEndOfDayMode}
                                 onChange={(e) => handleItemCheck(
                                   sectionIndex, 
                                   itemIndex, 
