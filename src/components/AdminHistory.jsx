@@ -20,41 +20,31 @@ export default function AdminHistory({ onSelectChecklist, onBackToNew, onViewAdm
     
     setLoading(true);
     try {
-      console.log('管理者用チェックリスト取得開始');
-      
-      // 全ユーザーのチェックリストを取得（createdByフィルタなし）
       const q = query(
         collection(db, 'checklists'),
         orderBy('date', 'desc')
       );
       
-      console.log('Firestoreクエリ実行中...');
       const querySnapshot = await getDocs(q);
-      console.log('クエリ結果:', querySnapshot.size, '件');
-      
       const checklistData = [];
       
       querySnapshot.forEach((doc) => {
-        console.log('ドキュメント:', doc.id, doc.data());
         checklistData.push({
           id: doc.id,
           ...doc.data()
         });
       });
       
-      console.log('取得完了:', checklistData.length, '件');
       setChecklists(checklistData);
     } catch (error) {
-      console.error('管理者用チェックリスト取得エラー詳細:', error);
-      console.error('エラーコード:', error.code);
-      console.error('エラーメッセージ:', error.message);
+      console.error('チェックリスト取得エラー:', error.message);
       
       if (error.code === 'permission-denied') {
         alert('チェックリストの取得権限がありません。管理者権限を確認してください。');
       } else if (error.code === 'failed-precondition') {
-        alert('Firestoreのインデックスが不足しています。Firebase Consoleでインデックスを作成してください。');
+        alert('データベースの設定が必要です。管理者に連絡してください。');
       } else {
-        alert(`チェックリストの取得に失敗しました: ${error.message}`);
+        alert('チェックリストの取得に失敗しました。');
       }
     }
     setLoading(false);
@@ -227,7 +217,7 @@ export default function AdminHistory({ onSelectChecklist, onBackToNew, onViewAdm
                       <p><strong>点検者:</strong> {checklist.inspector || '-'}</p>
                       <p><strong>天候:</strong> {checklist.weather || '-'}</p>
                       <p><strong>作成者:</strong> {checklist.createdBy || '-'}</p>
-                      <p><strong>始業時:</strong> {completedStart}/{total} <strong>終業時:</strong> {completedEnd}/{total}</p>
+                      <p><strong>始業時:</strong> {completedStart}/{totalStart} <strong>終業時:</strong> {completedEnd}/{totalEnd}</p>
                     </div>
                     
                     {checklist.specialNotes && (

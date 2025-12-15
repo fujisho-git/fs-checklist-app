@@ -1,6 +1,5 @@
 export const checklistTemplate = {
   "title": "石油コークス篩い分け設備\n点検チェックシート",
-  "header_info": "点検日: ______年______月______日 天候: 点検者: ______________",
   "sections": [
     {
       "title": "1) 施設全体の運転前準備項目",
@@ -87,63 +86,21 @@ export function createNewChecklist() {
     id: `checklist_${Date.now()}`,
     date: `${year}-${month}-${day}`,
     title: checklistTemplate.title,
-    header_info: `点検日: ${year}年${month}月${day}日 天候: _____ 点検者: ______________`,
     sections: checklistTemplate.sections.map(section => ({
       ...section,
-      items: section.items.map(item => {
-        if (typeof item === 'string') {
-          return {
-            id: `item_${Date.now()}_${Math.random()}`,
-            text: item,
-            checkType: 'both',
-            checkedStart: false,
-            checkedEnd: false,
-            note: ''
-          };
-        } else if (item.text) {
-          // オブジェクト形式の項目
-          return {
-            id: `item_${Date.now()}_${Math.random()}`,
-            text: item.text,
-            checkType: item.checkType || 'both',
-            checkedStart: false,
-            checkedEnd: false,
-            note: ''
-          };
-        } else if (item.checks) {
-          // 設備個別点検の場合
-          return {
-            ...item,
-            checks: item.checks.map(check => {
-              if (typeof check === 'string') {
-                return {
-                  id: `check_${Date.now()}_${Math.random()}`,
-                  text: check,
-                  checkType: 'both',
-                  checkedStart: false,
-                  checkedEnd: false,
-                  note: ''
-                };
-              } else {
-                return {
-                  id: `check_${Date.now()}_${Math.random()}`,
-                  text: check.text,
-                  checkType: check.checkType || 'both',
-                  checkedStart: false,
-                  checkedEnd: false,
-                  note: ''
-                };
-              }
-            })
-          };
-        }
-        return item;
-      })
+      items: section.items.map(item => ({
+        id: `item_${Date.now()}_${Math.random()}`,
+        text: item.text,
+        checkType: item.checkType || 'both',
+        checkedStart: false,
+        checkedEnd: false,
+        note: ''
+      }))
     })),
     specialNotes: '',
     completedAt: null,
-    startCompletedAt: null,  // 始業時点検完了日時
-    endCompletedAt: null,    // 終業時点検完了日時
+    startCompletedAt: null,
+    endCompletedAt: null,
     createdBy: null
   };
 }
