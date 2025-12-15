@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createNewChecklist } from '../data/checklistData';
-import { doc, setDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
 // 丸数字を生成するヘルパー関数
@@ -131,18 +131,22 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
 
     try {
       const todayDate = getTodayDate();
+      // シンプルなクエリ（インデックス不要）
       const q = query(
         collection(db, 'checklists'),
         where('createdBy', '==', user.email),
-        where('date', '==', todayDate),
-        orderBy('startCompletedAt', 'desc'),
-        limit(1)
+        where('date', '==', todayDate)
       );
 
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        return { id: doc.id, ...doc.data() };
+        // 始業時点検完了済みで、終業時点検未完了のものを探す
+        const docs = querySnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(item => item.startCompletedAt && !item.endCompletedAt)
+          .sort((a, b) => new Date(b.startCompletedAt) - new Date(a.startCompletedAt));
+        
+        return docs.length > 0 ? docs[0] : null;
       }
     } catch (error) {
       console.error('今日のチェックリスト取得エラー:', error);

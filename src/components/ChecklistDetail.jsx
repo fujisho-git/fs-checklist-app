@@ -129,10 +129,10 @@ export default function ChecklistDetail({ checklist, onBackToHistory, isFromAdmi
           </div>
           <div className="completion-rates">
             <div className={`completion-status ${completionRateStart === 100 ? 'complete' : 'incomplete'}`}>
-              <strong>始業時完了率:</strong> {completionRateStart}% ({completedStart}/{total})
+              <strong>始業時完了率:</strong> {completionRateStart}% ({completedStart}/{totalStart})
             </div>
             <div className={`completion-status ${completionRateEnd === 100 ? 'complete' : 'incomplete'}`}>
-              <strong>終業時完了率:</strong> {completionRateEnd}% ({completedEnd}/{total})
+              <strong>終業時完了率:</strong> {completionRateEnd}% ({completedEnd}/{totalEnd})
             </div>
           </div>
           {checklist.completedAt && (
