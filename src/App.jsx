@@ -187,7 +187,15 @@ function AppContent() {
         // ログイン成功時に他のタブに通知
         localStorage.setItem('loginSuccess', Date.now().toString());
         localStorage.removeItem('loginSuccess');
-        window.close(); // 別タブを閉じる
+        
+        // 別タブで開かれた場合のみウィンドウを閉じる
+        if (window.opener && !window.opener.closed) {
+          window.close();
+        } else {
+          // 直接アクセスした場合はメイン画面にリダイレクト
+          window.location.hash = '';
+          window.location.reload();
+        }
       }}
     />;
   }

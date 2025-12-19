@@ -682,13 +682,22 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
         ))}
         
         <div className="save-section">
-          <button 
-            onClick={handleSaveClick}
-            disabled={saving || !inspector.trim()}
-            className={`save-button ${isEndOfDayMode ? 'end-of-day' : 'start-of-day'}`}
-          >
-            {saving ? '保存中...' : (isEndOfDayMode ? '終業時点検を保存' : '始業時点検を保存')}
-          </button>
+          <div className="button-group">
+            <button 
+              onClick={handleSaveClick}
+              disabled={saving || !inspector.trim()}
+              className={`save-button ${isEndOfDayMode ? 'end-of-day' : 'start-of-day'}`}
+            >
+              {saving ? '保存中...' : (isEndOfDayMode ? '終業時点検を保存' : '始業時点検を保存')}
+            </button>
+            <button 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="scroll-top-button"
+              title="ページの先頭に戻る"
+            >
+              ↑ 上へ
+            </button>
+          </div>
           {!inspector.trim() && (
             <p className="save-hint">点検者名を入力してから保存してください</p>
           )}

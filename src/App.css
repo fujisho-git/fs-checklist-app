@@ -973,6 +973,14 @@ body {
   text-align: center;
 }
 
+.button-group {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .save-button {
   padding: 1rem 2rem;
   background-color: #27ae60;
@@ -983,6 +991,25 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s;
+}
+
+.scroll-top-button {
+  padding: 1rem 1.5rem;
+  background-color: #95a5a6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.scroll-top-button:hover {
+  background-color: #7f8c8d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .save-button:hover:not(:disabled) {
@@ -1691,6 +1718,22 @@ body {
   .back-button {
     font-size: 0.9rem;
     padding: 0.4rem 0.8rem;
+  }
+  
+  /* ボタングループのモバイル対応 */
+  .button-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .scroll-top-button {
+    width: 100%;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.9rem;
+  }
+  
+  .save-button {
+    width: 100%;
   }
   
   /* フォーム要素 */
