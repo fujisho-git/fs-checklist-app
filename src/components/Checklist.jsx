@@ -259,6 +259,136 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
     setChecklist(prev => ({ ...prev, specialNotes: notes }));
   };
 
+  // Teams通知を送信する関数（ワークフロー対応）
+  const sendTeamsNotification = async (checklistData, isEndOfDay = true) => {
+    const teamsWebhookUrl = import.meta.env.VITE_TEAMS_WEBHOOK_URL;
+    
+    console.log('=== Teams通知デバッグ ===');
+    console.log('Webhook URL:', teamsWebhookUrl ? '設定あり' : '設定なし');
+    console.log('通知種別:', isEndOfDay ? '終業時' : '始業時');
+    
+    // Webhook URLが設定されていない場合はスキップ（エラーにはしない）
+    if (!teamsWebhookUrl) {
+      console.log('Teams Webhook URLが設定されていません（通知スキップ）');
+      return;
+    }
+
+    try {
+      // 未チェック項目をカウント
+      const uncheckedItems = checkUncheckedItems();
+      const uncheckedCount = uncheckedItems.length;
+      
+      console.log('送信データ:', {
+        inspector: checklistData.inspector,
+        date: checklistData.date,
+        uncheckedCount: uncheckedCount,
+        isEndOfDay: isEndOfDay
+      });
+      
+      // 始業時・終業時で内容を変える
+      const title = isEndOfDay ? "🌙 終業時点検が完了しました" : "☀️ 始業時点検が完了しました";
+      const completedAt = isEndOfDay ? checklistData.endCompletedAt : checklistData.startCompletedAt;
+      const themeColor = isEndOfDay ? "Good" : "Attention"; // 終業時=緑、始業時=黄色
+      
+      const message = {
+        type: "message",
+        attachments: [
+          {
+            contentType: "application/vnd.microsoft.card.adaptive",
+            content: {
+              type: "AdaptiveCard",
+              body: [
+                {
+                  type: "TextBlock",
+                  text: title,
+                  size: "large",
+                  weight: "bolder",
+                  color: themeColor
+                },
+                {
+                  type: "FactSet",
+                  facts: [
+                    {
+                      title: "点検種別:",
+                      value: isEndOfDay ? "終業時点検" : "始業時点検"
+                    },
+                    {
+                      title: "点検者:",
+                      value: checklistData.inspector
+                    },
+                    {
+                      title: "点検日:",
+                      value: checklistData.date
+                    },
+                    {
+                      title: "天候:",
+                      value: checklistData.weather || "未入力"
+                    },
+                    {
+                      title: "完了時刻:",
+                      value: new Date(completedAt).toLocaleString('ja-JP')
+                    },
+                    {
+                      title: "未チェック項目:",
+                      value: uncheckedCount > 0 ? `${uncheckedCount}件 ⚠️` : "なし ✅"
+                    }
+                  ]
+                },
+                {
+                  type: "TextBlock",
+                  text: "特記事項",
+                  weight: "bolder",
+                  spacing: "medium"
+                },
+                {
+                  type: "TextBlock",
+                  text: checklistData.specialNotes || "なし",
+                  wrap: true,
+                  spacing: "small"
+                }
+              ],
+              actions: [
+                {
+                  type: "Action.OpenUrl",
+                  title: "詳細を確認",
+                  url: `${window.location.origin}/#detail-${checklistData.id}`
+                }
+              ],
+              $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+              version: "1.4"
+            }
+          }
+        ]
+      };
+
+      console.log('送信するメッセージ:', JSON.stringify(message, null, 2));
+
+      // Teamsワークフローに送信
+      const response = await fetch(teamsWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message)
+      });
+
+      console.log('レスポンスステータス:', response.status);
+      
+      const responseText = await response.text();
+      console.log('レスポンス本文:', responseText);
+
+      if (!response.ok) {
+        throw new Error(`Teams通知の送信に失敗しました: ${response.status} - ${responseText}`);
+      }
+
+      console.log('✅ Teams通知を送信しました');
+      // alert('Teams通知を送信しました！'); // デバッグ用アラートを削除
+    } catch (error) {
+      // 通知の失敗はユーザーには表示せず、コンソールにログ出力のみ
+      console.error('Teams通知エラー:', error);
+    }
+  };
+
   // チェックが入っていない項目があるかチェック（始業時/終業時モードに応じて）
   const checkUncheckedItems = () => {
     const uncheckedItems = [];
@@ -347,6 +477,9 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
       setChecklist(updatedChecklist);
       
       if (isEndOfDayMode) {
+        // 終業時点検完了時にTeams通知を送信
+        await sendTeamsNotification(updatedChecklist, true);
+        
         setResultModalData({
           type: 'success-end',
           message: '終業時点検を保存しました',
@@ -354,6 +487,9 @@ export default function Checklist({ onViewHistory, onViewAdminHistory, currentUs
         });
         setShowResultModal(true);
       } else {
+        // 始業時点検完了時にTeams通知を送信
+        await sendTeamsNotification(updatedChecklist, false);
+        
         setResultModalData({
           type: 'success-start',
           message: '始業時点検を保存しました',

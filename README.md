@@ -6,7 +6,11 @@
 
 - **ユーザー認証**: Firebase Authenticationによるメール・パスワード認証
 - **チェックリスト管理**: 作業前点検項目のチェックと備考記入
+- **始業時・終業時点検**: 1日2回の点検に対応
 - **データ保存**: Firestoreでチェック結果を永続化
+- **Teams通知**: 終業時点検完了時に自動でMicrosoft Teamsに通知（オプション）
+- **履歴管理**: 過去の点検結果の閲覧・検索
+- **管理者機能**: ユーザー管理、全点検履歴の閲覧
 - **レスポンシブデザイン**: モバイルデバイスでも使いやすいデザイン
 
 ## セットアップ
@@ -31,6 +35,7 @@ npm install
 プロジェクトルートに `.env.local` ファイルを作成し、以下の形式でFirebase設定を記述：
 
 ```bash
+# Firebase設定（必須）
 VITE_apiKey=your_api_key_here
 VITE_authDomain=your_project_id.firebaseapp.com
 VITE_databaseURL=https://your_project_id-default-rtdb.firebaseio.com/
@@ -39,7 +44,54 @@ VITE_storageBucket=your_project_id.appspot.com
 VITE_messagingSenderId=your_messaging_sender_id
 VITE_appId=your_app_id
 VITE_measurementId=your_measurement_id
+
+# Microsoft Teams通知（オプション）
+# 終業時点検完了時にTeamsへ通知を送信する場合に設定
+# Teamsワークフロー（Power Automate）で生成されたWebhook URLを使用
+VITE_TEAMS_WEBHOOK_URL=https://prod-xx.japaneast.logic.azure.com:443/workflows/xxxxx
 ```
+
+#### Microsoft Teams通知の設定方法（オプション）
+
+終業時点検完了時に自動でTeamsに通知を送信できます：
+
+**注意**: 従来のIncoming Webhookは廃止されました。新しい「ワークフロー」機能を使用してください。
+
+1. **Teamsでチャネルを開く**
+   - 通知を受信したいチャネルを選択
+
+2. **ワークフローを追加**
+   - メッセージ作成欄の「…」（その他のオプション）をクリック
+   - 「ワークフロー」を選択
+   - 「Webhook経由で受信したときに、チャネルに投稿する」を検索
+   - またはテンプレートから「チャネルに投稿する」を選択
+
+3. **ワークフローを設定**
+   - チームとチャネルを選択
+   - 「追加」をクリック
+
+4. **Webhook URLをコピー**
+   - 生成されたURLをコピー（形式: `https://prod-xx.japaneast.logic.azure.com:443/workflows/...`）
+   - `.env.local`の`VITE_TEAMS_WEBHOOK_URL`に貼り付け
+
+5. **アプリを再起動**
+   ```bash
+   npm run dev
+   ```
+
+**通知される内容：**
+- 点検種別（始業時/終業時）
+- 点検者名
+- 点検日
+- 天候
+- 完了時刻
+- 未チェック項目数
+- 特記事項
+- 詳細確認リンク
+
+**通知タイミング：**
+- ☀️ 始業時点検を保存したとき
+- 🌙 終業時点検を保存したとき
 
 ### 4. アプリの起動
 
@@ -148,6 +200,8 @@ npm run test:e2e:report
 
 ## ビルドとデプロイ
 
+### ローカルビルド
+
 ```bash
 # プロダクションビルド
 npm run build
@@ -155,6 +209,30 @@ npm run build
 # ビルド結果のプレビュー
 npm run preview
 ```
+
+### Vercelへのデプロイ
+
+1. **リポジトリをVercelに接続**
+
+2. **環境変数を設定**
+   - Vercelダッシュボード → Settings → Environment Variables
+   - `.env.local`の全ての変数を追加：
+     - `VITE_apiKey`
+     - `VITE_authDomain`
+     - `VITE_databaseURL`
+     - `VITE_projectId`
+     - `VITE_storageBucket`
+     - `VITE_messagingSenderId`
+     - `VITE_appId`
+     - `VITE_measurementId`
+     - `VITE_TEAMS_WEBHOOK_URL`（オプション）
+
+3. **Firebase Authenticationでドメインを許可**
+   - Firebase Console → Authentication → Settings → Authorized domains
+   - Vercelのドメイン（例：`your-app.vercel.app`）を追加
+
+4. **デプロイ**
+   - Vercelが自動でビルド・デプロイを実行
 
 ## ライセンス
 
